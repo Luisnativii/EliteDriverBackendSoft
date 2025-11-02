@@ -1,0 +1,29 @@
+# application.yml (ajustado)
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/elitedriver
+    username: elitedriver_user
+    password: elitedriver_pass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        globally_quoted_identifiers: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.example.elitedriverbackend.services.VehicleService: DEBUG
+
+jwt:
+  secret: "2dc4d72e-b851-4844-aa5d-f944e452f0d4"
+  exptime: 1296000000
