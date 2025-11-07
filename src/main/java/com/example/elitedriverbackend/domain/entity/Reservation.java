@@ -2,13 +2,10 @@ package com.example.elitedriverbackend.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 
 import java.util.Date;
 import java.util.UUID;
 
-@Getter
-@Setter
 @Data
 @Entity
 @Builder
@@ -17,9 +14,7 @@ import java.util.UUID;
 @Table(name = "reservations")
 public class Reservation {
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name ="id",updatable = false, nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false)

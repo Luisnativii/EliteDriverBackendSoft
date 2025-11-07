@@ -45,10 +45,6 @@ public class Vehicle {
     @Column(nullable = false)
     private Integer kilometers;
 
-    /**
-     * Número de teléfono de la aseguradora (opcional).
-     * Nota: no ponemos nullable = false, queda nullable = true por defecto.
-     */
     @Column(name = "insurance_phone")
     private String insurancePhone;
 
@@ -90,30 +86,4 @@ public class Vehicle {
     )
     private Set<MaintenanceRecord> maintenanceRecords = new HashSet<>();
 
-
-    // =============================================
-    // MÉTODOS DE LÓGICA DE MANTENIMIENTO
-    // =============================================
-
-    public Integer getNextMaintenanceKm() {
-        if (kilometers == null || kmForMaintenance == null) return null;
-        int cycles = (int) Math.ceil((double) kilometers / kmForMaintenance);
-        return cycles * kmForMaintenance;
-    }
-
-    public Integer getKmUntilMaintenance() {
-        Integer next = getNextMaintenanceKm();
-        if (next == null || kilometers == null) return null;
-        return Math.max(0, next - kilometers);
-    }
-
-    public boolean needsMaintenance() {
-        if (kilometers == null || kmForMaintenance == null) return false;
-        return kilometers > 0 && kilometers % kmForMaintenance == 0;
-    }
-
-    public Integer getCompletedMaintenanceCycles() {
-        if (kilometers == null || kmForMaintenance == null) return 0;
-        return kilometers / kmForMaintenance;
-    }
 }
