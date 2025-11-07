@@ -250,14 +250,6 @@ docker run -p 8080:8080 elitedriver-backend
 | Admin | admin@example.com | adminadmin |
 | Usuario | (registrarse desde el frontend) | — |
 
----
-
-## 🧠 Contribuyentes
-
-| Integrante | Rol | Responsabilidad |
-|-------------|-----|-----------------|
-| **Luis Alejandro Nativi** | Backend Developer | Entidades, controladores, optimización, autenticación JWT, mantenimiento. |
-| **Fabio Alberto Mijango** | Frontend / Documentation | Interfaz React, consumo de API, documentación técnica y README. |
 
 ---
 
