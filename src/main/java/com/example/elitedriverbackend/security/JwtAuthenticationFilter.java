@@ -25,10 +25,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    // Endpoints que no requieren autenticación
+    // Añadido /api/auth/validate
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
             "/api/auth/login",
-            "/api/auth/register"
+            "/api/auth/register",
+            "/api/auth/validate"
     );
 
     @Override
@@ -38,7 +39,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String requestPath = request.getRequestURI();
 
-        // Si la ruta está excluida, continuar sin validar JWT
         if (isExcludedPath(requestPath)) {
             filterChain.doFilter(request, response);
             return;
@@ -71,7 +71,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (Exception e) {
-                // Log del error pero continuar con el filtro
                 System.err.println("Error loading user details: " + e.getMessage());
             }
         }
