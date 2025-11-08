@@ -6,12 +6,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
@@ -19,13 +20,18 @@ import java.util.function.Function;
 @Service
 @Slf4j
 public class JwtService {
-    private static final String SECRET_KEY = "6A9F2A782CDE1B38C9E7407B13A0C2E5A9F2A782CDE1B38C9E7407B13A0C2E5";
+
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Value("${jwt.exptime:86400000}") // por defecto 24h en ms
+    private long expirationMs;
 
     public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 horas
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -39,39 +45,30 @@ public class JwtService {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
+        final Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+        return claimsResolver.apply(claims);
     }
 
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    // Método que estaba faltando
     public boolean isTokenValid(String token) {
         try {
-            // Intentar parsear el token
             Jwts.parserBuilder()
                     .setSigningKey(getSignInKey())
                     .build()
                     .parseClaimsJws(token);
-
-            // Si no hay excepción, verificar si no está expirado
             return !isTokenExpired(token);
-
         } catch (ExpiredJwtException e) {
             log.warn("Token expirado: {}", e.getMessage());
             return false;
         } catch (SignatureException e) {
-            log.warn("Firma del token inválida: {}", e.getMessage());
+            log.warn("Firma inválida: {}", e.getMessage());
             return false;
         } catch (MalformedJwtException e) {
             log.warn("Token malformado: {}", e.getMessage());
@@ -88,14 +85,13 @@ public class JwtService {
         }
     }
 
-    // Sobrecarga del método para validar token con username específico
     public boolean isTokenValid(String token, String username) {
         final String tokenUsername = extractUsername(token);
         return (tokenUsername.equals(username)) && !isTokenExpired(token);
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        // Usa el secreto de 'application.yml' tal cual (no Base64), para evitar errores de decodificación.
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }

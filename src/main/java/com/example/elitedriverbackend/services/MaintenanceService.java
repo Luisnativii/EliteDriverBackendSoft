@@ -8,6 +8,7 @@ import com.example.elitedriverbackend.repositories.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,26 +22,30 @@ public class MaintenanceService {
     private final MaintenanceRecordRepository maintenanceRecordRepository;
     private final VehicleRepository vehicleRepository;
 
-    /**
-     * Aplica la lógica de detección de mantenimiento cuando se actualizan kilómetros.
-     * Mantiene el comportamiento anterior:
-     * - Si se cruza un nuevo múltiplo de kmForMaintenance → crea registro y marca maintenanceRequired.
-     * - Si no se cruza y llega un estado explícito, se aplica ese estado.
-     */
+
+    @Transactional
     public void processKilometerUpdate(Vehicle vehicle, Integer newKilometers, VehicleStatus requestedStatus) {
-        Integer prevKm = vehicle.getKilometers();
+        if (newKilometers == null) return;
+
+        Integer prevKmObj = vehicle.getKilometers();
+        int prevKm = (prevKmObj != null) ? prevKmObj : 0;
         vehicle.setKilometers(newKilometers);
 
-        if (vehicle.getKmForMaintenance() == null) {
+        Integer intervalObj = vehicle.getKmForMaintenance();
+        if (intervalObj == null || intervalObj <= 0) {
             if (requestedStatus != null) vehicle.setStatus(requestedStatus);
             return;
         }
 
-        int interval   = vehicle.getKmForMaintenance();
+        // Si el nuevo km es menor (corrección manual), no disparar mantenimiento automático
+        if (newKilometers < prevKm) {
+            if (requestedStatus != null) vehicle.setStatus(requestedStatus);
+            return;
+        }
+
+        int interval   = intervalObj;
         int prevCycles = prevKm / interval;
         int currCycles = newKilometers / interval;
-
-        log.info("🔧 Verificando mantenimiento '{}' ({}→{} km) interval {}", vehicle.getName(), prevKm, newKilometers, interval);
 
         if (currCycles > prevCycles) {
             MaintenanceRecord record = MaintenanceRecord.builder()
@@ -50,26 +55,21 @@ public class MaintenanceService {
                     .build();
             maintenanceRecordRepository.save(record);
             vehicle.setStatus(VehicleStatus.maintenanceRequired);
-            log.info("⚠️ '{}' requiere mantenimiento (registro creado)", vehicle.getName());
+            log.debug("Maintenance requerido para '{}' (km={}, intervalo={})", vehicle.getName(), newKilometers, interval);
         } else if (requestedStatus != null) {
             vehicle.setStatus(requestedStatus);
         }
     }
 
-    /**
-     * Marca que el mantenimiento fue realizado (simple cambio de estado).
-     */
+    @Transactional
     public void markMaintenanceCompleted(UUID vehicleId) {
         Vehicle v = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle no encontrado"));
         v.setStatus(VehicleStatus.maintenanceCompleted);
         vehicleRepository.save(v);
-        log.info("✅ Mantenimiento completado para '{}'", v.getName());
     }
 
-    /**
-     * Crea un registro manual (por ejemplo si se ingresa desde un taller externo) y marca estado requerido.
-     */
+    @Transactional
     public MaintenanceRecord createManualRecord(UUID vehicleId, Integer km, LocalDateTime dateTime) {
         Vehicle v = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new RuntimeException("Vehicle no encontrado"));
@@ -84,6 +84,7 @@ public class MaintenanceService {
         return record;
     }
 
+    @Transactional(readOnly = true)
     public List<MaintenanceRecord> getHistory(UUID vehicleId) {
         return maintenanceRecordRepository.findByVehicleIdOrderByMaintenanceDateDesc(vehicleId);
     }
