@@ -9,6 +9,7 @@ import com.example.elitedriverbackend.repositories.ReservationRepository;
 import com.example.elitedriverbackend.repositories.UserRepository;
 import com.example.elitedriverbackend.repositories.VehicleRepository;
 import com.example.elitedriverbackend.repositories.VehicleTypeRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -39,10 +40,10 @@ public class ReservationService {
     public Reservation addReservation(CreateReservationDTO createReservationDTO) {
 
         User user = userRepository.findById(UUID.fromString(createReservationDTO.getUserId()))
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
         Vehicle vehicle = vehicleRepository.findById(UUID.fromString(createReservationDTO.getVehicleId()))
-                .orElseThrow(() -> new RuntimeException("Vehiculo no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehiculo no encontrado"));
         // Convertir LocalDate a java.sql.Date (sin hora ni desfase)
         LocalDate start = createReservationDTO.getStartDate();
         LocalDate end = createReservationDTO.getEndDate();
@@ -74,13 +75,12 @@ public class ReservationService {
 
     public void deleteReservation(UUID id) {
         if (!reservationRepository.existsById(id)) {
-            throw new RuntimeException("Reserva con id " + id + " no encontrada");
+            throw new EntityNotFoundException("Reserva con id " + id + " no encontrada");
         }
         reservationRepository.deleteById(id);
     }
 
     public List<Reservation> getAllReservations() {
-        try{
             log.info("Obteniendo todas las reservas");
             List<Reservation> reservations = reservationRepository.findAll();
 
@@ -101,54 +101,33 @@ public class ReservationService {
                 }
             }
             return reservations;
-        } catch (Exception e){
-            log.error("❌ Error obteniendo reservas: ", e);
-            throw new RuntimeException("Error obteniendo reservas: " + e.getMessage(), e);
-
-        }
     }
 
     public Reservation getReservationById(UUID id) {
         return reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reserva con id " + id + " no encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Reserva con id " + id + " no encontrada"));
     }
     // Metodos que faltan
     // GetByDateRange, GetByUser, GetByTypeOfVehicle, GetByVehicle
 
     public List<Reservation> getReservationByRange(Date startDate, Date endDate) {
-        try {
-            return reservationRepository.findByStartDateBetween(startDate, endDate);
-        }catch (Exception e){
-            throw new RuntimeException("Error obteniendo reservas: " + e.getMessage(), e);
-        }
+        return reservationRepository.findByStartDateBetween(startDate, endDate);
     }
     public List<Reservation> getReservationByUser(UUID user) {
-        try {
             return reservationRepository.findAll().stream()
                     .filter(reservation -> reservation.getUser().getId().equals(user))
                     .toList();
-        } catch (Exception e) {
-            throw new RuntimeException("Error obteniendo reservas por usuario: " + e.getMessage(), e);
-        }
     }
 
     public List<Reservation> getReservationByVehicle(UUID vehicle) {
-        try {
             return reservationRepository.findAll().stream()
                     .filter(reservation -> reservation.getVehicle().getId().equals(vehicle))
                     .toList();
-        } catch (Exception e) {
-            throw new RuntimeException("Error obteniendo reservas por vehículo: " + e.getMessage(), e);
-        }
     }
 
     public List<Reservation> getReservationByVehicleType(String vehicleType) {
-        try {
             VehicleType type = vehicleTypeRepository.findByType(vehicleType)
-                    .orElseThrow(() -> new RuntimeException("Tipo de vehículo no encontrado"));
+                    .orElseThrow(() -> new EntityNotFoundException("Tipo de vehículo no encontrado"));
             return reservationRepository.findByVehicle_VehicleType(type);
-        } catch (Exception e) {
-            throw new RuntimeException("Error obteniendo reservas por tipo de vehículo: " + e.getMessage(), e);
-        }
     }
 }

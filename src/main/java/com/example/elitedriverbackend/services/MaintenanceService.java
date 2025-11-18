@@ -5,6 +5,7 @@ import com.example.elitedriverbackend.domain.entity.Vehicle;
 import com.example.elitedriverbackend.domain.entity.VehicleStatus;
 import com.example.elitedriverbackend.repositories.MaintenanceRecordRepository;
 import com.example.elitedriverbackend.repositories.VehicleRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -64,7 +65,7 @@ public class MaintenanceService {
     @Transactional
     public void markMaintenanceCompleted(UUID vehicleId) {
         Vehicle v = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehicle no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle no encontrado"));
         v.setStatus(VehicleStatus.maintenanceCompleted);
         vehicleRepository.save(v);
     }
@@ -72,7 +73,7 @@ public class MaintenanceService {
     @Transactional
     public MaintenanceRecord createManualRecord(UUID vehicleId, Integer km, LocalDateTime dateTime) {
         Vehicle v = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehicle no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle no encontrado"));
         MaintenanceRecord record = MaintenanceRecord.builder()
                 .vehicle(v)
                 .maintenanceDate(dateTime != null ? dateTime : LocalDateTime.now())

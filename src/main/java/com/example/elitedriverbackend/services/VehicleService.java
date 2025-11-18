@@ -12,7 +12,9 @@ import com.example.elitedriverbackend.domain.entity.VehicleType;
 import com.example.elitedriverbackend.repositories.MaintenanceRecordRepository;
 import com.example.elitedriverbackend.repositories.VehicleRepository;
 import com.example.elitedriverbackend.repositories.VehicleTypeRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.sqm.EntityTypeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +58,7 @@ public class VehicleService {
 
         String typeName = dto.getVehicleType().getType();
         VehicleType type = vehicleTypeRepository.findByType(typeName)
-                .orElseThrow(() -> new RuntimeException("Vehicle type '" + typeName + "' no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle type '" + typeName + "' no encontrado"));
         v.setVehicleType(type);
 
         vehicleRepository.save(v);
@@ -65,7 +67,7 @@ public class VehicleService {
     @Transactional
     public void updateVehicle(UpdateVehicleDTO dto, UUID id) {
         Vehicle v = vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vehicle con id " + id + " no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle con id " + id + " no encontrado"));
 
         Integer prevKm = v.getKilometers();
 
@@ -96,7 +98,7 @@ public class VehicleService {
     @Transactional
     public void deleteVehicle(UUID id) {
         Vehicle v = vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vehicle con id " + id + " no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle con id " + id + " no encontrado"));
         vehicleRepository.delete(v);
     }
 
@@ -107,10 +109,10 @@ public class VehicleService {
     @Transactional
     public VehicleResponseDTO startMaintenance(UUID vehicleId) {
         Vehicle v = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehículo no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehículo no encontrado"));
         if (v.getStatus() != VehicleStatus.maintenanceRequired
                 && v.getStatus() != VehicleStatus.maintenanceCompleted) {
-            throw new RuntimeException("No se puede iniciar mantenimiento desde estado: " + v.getStatus());
+            throw new EntityNotFoundException("No se puede iniciar mantenimiento desde estado: " + v.getStatus());
         }
         v.setStatus(VehicleStatus.underMaintenance);
         vehicleRepository.save(v);
@@ -120,10 +122,10 @@ public class VehicleService {
     @Transactional
     public VehicleResponseDTO markMaintenanceCompleted(UUID vehicleId) {
         Vehicle v = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehículo no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehículo no encontrado"));
         if (v.getStatus() != VehicleStatus.underMaintenance
                 && v.getStatus() != VehicleStatus.maintenanceRequired) {
-            throw new RuntimeException("No se puede completar mantenimiento desde estado: " + v.getStatus());
+            throw new EntityNotFoundException("No se puede completar mantenimiento desde estado: " + v.getStatus());
         }
         v.setStatus(VehicleStatus.maintenanceCompleted);
         vehicleRepository.save(v);
@@ -133,7 +135,7 @@ public class VehicleService {
     @Transactional(readOnly = true)
     public List<MaintenanceRecordDTO> getMaintenanceHistory(UUID vehicleId) {
         vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new RuntimeException("Vehículo no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehículo no encontrado"));
         return maintenanceRecordRepository
                 .findByVehicleIdOrderByMaintenanceDateDesc(vehicleId)
                 .stream()
@@ -213,7 +215,7 @@ public class VehicleService {
     @Transactional(readOnly = true)
     public VehicleResponseDTO getVehicleById(UUID id) {
         Vehicle v = vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vehicle con id " + id + " no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle con id " + id + " no encontrado"));
         return toResponseDTO(v);
     }
 
@@ -221,7 +223,7 @@ public class VehicleService {
     public List<VehicleResponseDTO> getVehicleByType(VehicleTypeDTO typeDto) {
         String typeName = typeDto.getType();
         VehicleType type = vehicleTypeRepository.findByType(typeName)
-                .orElseThrow(() -> new RuntimeException("Vehicle type '" + typeName + "' no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Vehicle type '" + typeName + "' no encontrado"));
         return vehicleRepository.findByVehicleType(type).stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());

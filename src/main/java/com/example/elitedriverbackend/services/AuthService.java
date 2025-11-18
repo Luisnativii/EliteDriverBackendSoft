@@ -7,6 +7,8 @@ import com.example.elitedriverbackend.domain.dtos.UserResponse;
 import com.example.elitedriverbackend.domain.entity.User;
 import com.example.elitedriverbackend.repositories.UserRepository;
 import com.example.elitedriverbackend.security.JwtService;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +32,7 @@ public class AuthService {
     public String register(RegisterRequest request) {
         // Verificar si el usuario ya existe
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new EntityExistsException("El email ya está registrado");
         }
 
         // Crear nuevo usuario
@@ -56,7 +58,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Usuario no encontrado: {}", request.getEmail());
-                    return new RuntimeException("Credenciales inválidas");
+                    return new EntityNotFoundException("Credenciales inválidas");
                 });
 
         log.info("Usuario encontrado: {}", user.getEmail());
@@ -69,7 +71,7 @@ public class AuthService {
             authManager.authenticate(auth);
         } catch (Exception e) {
             log.warn("Contraseña incorrecta para: {}", request.getEmail());
-            throw new RuntimeException("Credenciales inválidas");
+            throw new EntityNotFoundException("Credenciales inválidas");
         }
 
         // Generar token JWT
