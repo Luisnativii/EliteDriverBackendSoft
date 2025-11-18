@@ -4,6 +4,7 @@ import com.example.elitedriverbackend.domain.dtos.CreateReservationDTO;
 import com.example.elitedriverbackend.domain.dtos.ReservationResponseDTO;
 import com.example.elitedriverbackend.domain.entity.Reservation;
 import com.example.elitedriverbackend.services.ReservationService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,11 +45,7 @@ public class ReservationController {
     }
 
     private UUID parseUUID(String id) {
-        try{
-            return UUID.fromString(id);
-        }catch(IllegalArgumentException e){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Id no es un UUID válido: " + id);
-        }
+        return UUID.fromString(id);
     }
 
 
@@ -56,23 +53,17 @@ public class ReservationController {
 
     @GetMapping
     public ResponseEntity<List<ReservationResponseDTO>> getAllReservations() {
-        try{
             List<Reservation> reservations = reservationService.getAllReservations();
 
             List<ReservationResponseDTO> reservationDTOs = reservations.stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(reservationDTOs);
-        }catch (Exception e){
-            log.error("Error en getAllReservations: ", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error en getAllReservations: " + e.getMessage());
-        }
     }
 
     private ReservationResponseDTO convertToDTO(Reservation reservation) {
         if (reservation.getVehicle() == null) {
-            throw new RuntimeException("Reservation con id " + reservation.getId() + " no tiene vehículo asociado");
+            throw new EntityNotFoundException("Reservation con id " + reservation.getId() + " no tiene vehículo asociado");
         }
 
         // ✅ Calcular totalPrice
@@ -110,8 +101,8 @@ public class ReservationController {
 
     @GetMapping("/date")
     public ResponseEntity<List<ReservationResponseDTO>> getReservationByRange(@RequestParam("startDate") String startDateStr,
-                                                                    @RequestParam("endDate") String endDateStr) {
-        try {
+                                                                    @RequestParam("endDate") String endDateStr) throws ParseException {
+
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
             Date startDate = dateFormat.parse(startDateStr);
             Date endDate = dateFormat.parse(endDateStr);
@@ -125,15 +116,12 @@ public class ReservationController {
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(dtos);
-        } catch (ParseException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fecha no válida: " + e.getMessage());
-        }
+
     }
 
     @GetMapping("/user")
     public ResponseEntity<List<ReservationResponseDTO>> getReservationByUser(@RequestParam("userId") String userId) {
-        try {
-            UUID uuid = UUID.fromString(userId); // conversión segura con try-catch
+            UUID uuid = parseUUID(userId);
 
             List<Reservation> reservations = reservationService.getReservationByUser(uuid);
 
@@ -142,32 +130,21 @@ public class ReservationController {
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(reservationDTOs);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "UUID inválido: " + userId);
-        }
     }
 
 
 
     @GetMapping("/vehicle")
     public ResponseEntity<List<Reservation>> getReservationByVehicle(@RequestParam("vehicleId") String vehicleId) {
-        try{
             UUID uuid = parseUUID(vehicleId);
             List<Reservation> reservations = reservationService.getReservationByVehicle(uuid);
             return ResponseEntity.ok(reservations);
-        }catch (Exception e){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en getReservationByVehicle: " + e.getMessage());
-        }
     }
 
     @GetMapping("/vehicleType")
     public ResponseEntity<List<Reservation>> getReservationByVehicleType(@RequestParam("vehicleType") String vehicleType) {
-        try {
             List<Reservation> reservations = reservationService.getReservationByVehicleType(vehicleType);
             return ResponseEntity.ok(reservations);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en getReservationByVehicleType: " + e.getMessage());
-        }
     }
 
     @DeleteMapping("/{id}")

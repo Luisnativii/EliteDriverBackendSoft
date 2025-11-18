@@ -23,27 +23,17 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
-        try {
             log.info("Registro iniciado para email: {}", request.getEmail());
             String result = authService.register(request);
             return ResponseEntity.ok().body(Map.of("message", result));
-        } catch (Exception e) {
-            log.error("Error en registro: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid AuthRequest request) {
-        try {
             log.info("Login iniciado para email: {}", request.getEmail());
             AuthResponse response = authService.login(request);
             log.info("Login exitoso para usuario: {}", request.getEmail());
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("Error en login para {}: {}", request.getEmail(), e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
-        }
     }
 
     @GetMapping("/validate")
