@@ -1,6 +1,8 @@
 package com.example.elitedriverbackend.handlers;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.query.sqm.EntityTypeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -8,6 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +63,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         ex.printStackTrace(); // para que lo veas en consola
-        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado.");
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado." + ex.getMessage());
+    }
+
+    @ExceptionHandler(ParseException.class)
+    public ResponseEntity<Map<String, Object>> handleParseException(ParseException ex) {
+        return buildError(HttpStatus.BAD_REQUEST, "Error al parsear la fecha: " + ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return buildError(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     // 🛠️ Utilidad para construir la respuesta
