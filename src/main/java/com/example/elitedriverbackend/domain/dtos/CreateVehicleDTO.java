@@ -59,8 +59,8 @@ public class CreateVehicleDTO {
     @NotNull
     private Integer kmForMaintenance;
 
-    private String mainImageUrl;
-    private List<String> imageUrls;
+    private String mainImageBase64;
+    private List<String> listImagesBase64;
 
     private String insurancePhone;
 

@@ -43,7 +43,7 @@ public class ReservationResponseDTO {
         private String brand;
         private String model;
         private Integer capacity;
-        private String mainImageUrl;
+        private String mainImageBase64;
         private double pricePerDay;
         private String vehicleType;
 
