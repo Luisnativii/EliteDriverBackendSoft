@@ -18,7 +18,9 @@ import org.hibernate.query.sqm.EntityTypeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,9 +53,10 @@ public class VehicleService {
         v.setInsurancePhone(dto.getInsurancePhone());
         v.setKmForMaintenance(dto.getKmForMaintenance());
         v.setStatus(VehicleStatus.maintenanceCompleted); // Inicialmente disponible post\-mantenimiento
-        v.setMainImageUrl(dto.getMainImageUrl());
-        if (dto.getImageUrls() != null) {
-            v.setImageUrls(new ArrayList<>(dto.getImageUrls()));
+        v.setMainImageBase64(dto.getMainImageBase64());
+
+        if (dto.getListImagesBase64() != null) {
+            v.setListImagesBase64(new ArrayList<>(dto.getListImagesBase64()));
         }
 
         String typeName = dto.getVehicleType().getType();
@@ -76,8 +79,8 @@ public class VehicleService {
         if (dto.getFeatures() != null)           v.setFeatures(dto.getFeatures());
         if (dto.getInsurancePhone() != null)     v.setInsurancePhone(dto.getInsurancePhone());
         if (dto.getKmForMaintenance() != null)   v.setKmForMaintenance(dto.getKmForMaintenance());
-        if (dto.getMainImageUrl() != null)       v.setMainImageUrl(dto.getMainImageUrl());
-        if (dto.getImageUrls() != null)          v.setImageUrls(new ArrayList<>(dto.getImageUrls()));
+        if (dto.getMainImageBase64() != null)    v.setMainImageBase64(dto.getMainImageBase64());
+        if (dto.getListImagesBase64() != null)   v.setListImagesBase64(new ArrayList<>(dto.getListImagesBase64()));
 
         // Si el caller quiere forzar estado (solo permitido en estados no conflictivos)
         if (dto.getStatus() != null) {
@@ -283,10 +286,32 @@ public class VehicleService {
                         .build())
                 .kmForMaintenance(v.getKmForMaintenance())
                 .status(v.getStatus())
-                .mainImageUrl(v.getMainImageUrl())
-                .imageUrls(v.getImageUrls())
+                .mainImageBase64(v.getMainImageBase64())
+                .listImagesBase64(v.getListImagesBase64())
                 .insurancePhone(v.getInsurancePhone())
                 .maintenanceRecords(hist)
                 .build();
     }
+
+
+    public void saveImages(UUID vehicleId, MultipartFile mainImage, List<MultipartFile> listImages) throws IOException, IOException {
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+        // Convert main image to Base64
+        String mainImageBase64 = Base64.getEncoder().encodeToString(mainImage.getBytes());
+
+        // Convert additional images to Base64
+        List<String> listImagesBase64 = new ArrayList<>();
+        for (MultipartFile img : listImages) {
+            listImagesBase64.add(Base64.getEncoder().encodeToString(img.getBytes()));
+        }
+
+        vehicle.setMainImageBase64(mainImageBase64);
+        vehicle.setListImagesBase64(listImagesBase64);
+
+        vehicleRepository.save(vehicle);
+    }
+
 }
