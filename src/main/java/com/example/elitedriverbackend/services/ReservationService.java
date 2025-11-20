@@ -1,133 +1,164 @@
 package com.example.elitedriverbackend.services;
 
-import com.example.elitedriverbackend.domain.dtos.CreateReservationDTO;
+import com.example.elitedriverbackend.domain.dtos.StartPaymentReservationDTO;
 import com.example.elitedriverbackend.domain.entity.Reservation;
+import com.example.elitedriverbackend.domain.entity.ReservationStatus;
 import com.example.elitedriverbackend.domain.entity.User;
 import com.example.elitedriverbackend.domain.entity.Vehicle;
-import com.example.elitedriverbackend.domain.entity.VehicleType;
 import com.example.elitedriverbackend.repositories.ReservationRepository;
 import com.example.elitedriverbackend.repositories.UserRepository;
 import com.example.elitedriverbackend.repositories.VehicleRepository;
-import com.example.elitedriverbackend.repositories.VehicleTypeRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
-@Slf4j
 @Service
-public class ReservationService {
+@RequiredArgsConstructor
+@Slf4j
+public class PaymentReservationService {
 
-    @Autowired
-    private ReservationRepository reservationRepository;
+    private final ReservationRepository reservationRepository;
+    private final UserRepository userRepository;
+    private final VehicleRepository vehicleRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    @Value("${wompi.public-key}")
+    private String wompiPublicKey;
+    @Value("${wompi.private-key}")
+    private String wompiPrivateKey;
+    @Value("${wompi.api-base}")
+    private String wompiApiBase;
+    @Value("${wompi.reservation-expiration-minutes:15}")
+    private long expirationMinutes;
 
-    @Autowired
-    private VehicleRepository vehicleRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    private VehicleTypeRepository vehicleTypeRepository;
-
-    public Reservation addReservation(CreateReservationDTO createReservationDTO) {
-
-        User user = userRepository.findById(UUID.fromString(createReservationDTO.getUserId()))
+    public Reservation startPayment(StartPaymentReservationDTO dto) {
+        User user = userRepository.findById(UUID.fromString(dto.getUserId()))
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+        Vehicle vehicle = vehicleRepository.findById(UUID.fromString(dto.getVehicleId()))
+                .orElseThrow(() -> new EntityNotFoundException("Vehículo no encontrado"));
 
-        Vehicle vehicle = vehicleRepository.findById(UUID.fromString(createReservationDTO.getVehicleId()))
-                .orElseThrow(() -> new EntityNotFoundException("Vehiculo no encontrado"));
-        // Convertir LocalDate a java.sql.Date (sin hora ni desfase)
-        LocalDate start = createReservationDTO.getStartDate();
-        LocalDate end = createReservationDTO.getEndDate();
+        LocalDate start = dto.getStartDate();
+        LocalDate end = dto.getEndDate();
+        if (end.isBefore(start)) throw new IllegalArgumentException("Rango de fechas inválido");
 
         Date startDate = java.sql.Date.valueOf(start);
         Date endDate = java.sql.Date.valueOf(end);
 
+        var overlaps = reservationRepository.findConfirmedOverlap(vehicle.getId(), startDate, endDate);
+        if (!overlaps.isEmpty()) throw new IllegalStateException("Vehículo ya reservado en ese rango");
 
+        String paymentReference = UUID.randomUUID().toString();
 
-        // Validar si ya está reservado en ese rango
-        List<Reservation> overlappingReservations = reservationRepository
-                .findByVehicleIdAndDateOverlap(vehicle.getId(), startDate, endDate);
+        Reservation reservation = Reservation.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .user(user)
+                .vehicle(vehicle)
+                .status(ReservationStatus.PENDING_PAYMENT)
+                .paymentReference(paymentReference)
+                .amountCents(dto.getAmountCents())
+                .currency(dto.getCurrency() != null ? dto.getCurrency() : "USD")
+                .expiresAt(Instant.now().plusSeconds(expirationMinutes * 60))
+                .build();
 
-        if (!overlappingReservations.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "❌ Este vehículo ya está reservado en el rango de fechas seleccionado"
+        reservationRepository.save(reservation);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("amount_in_cents", dto.getAmountCents());
+        payload.put("currency", reservation.getCurrency());
+        payload.put("customer_email", user.getEmail());
+        payload.put("reference", paymentReference);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(wompiPrivateKey);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    wompiApiBase + "/transactions",
+                    entity,
+                    String.class
             );
-              }
-
-
-        Reservation newReservation = new Reservation();
-        newReservation.setStartDate(startDate);
-        newReservation.setEndDate(endDate);
-        newReservation.setUser(user);
-        newReservation.setVehicle(vehicle);
-        return reservationRepository.save(newReservation);
-    }
-
-    public void deleteReservation(UUID id) {
-        if (!reservationRepository.existsById(id)) {
-            throw new EntityNotFoundException("Reserva con id " + id + " no encontrada");
+            log.info("Wompi respuesta: {}", response.getBody());
+            extractTransactionIdIfPresent(reservation, response.getBody());
+        } catch (Exception e) {
+            log.error("Error creando transacción Wompi: {}", e.getMessage());
+            reservation.setStatus(ReservationStatus.FAILED);
+            reservation.setFailureReason("WOMPI_INIT_ERROR");
+            reservationRepository.save(reservation);
         }
-        reservationRepository.deleteById(id);
+
+        return reservation;
     }
 
-    public List<Reservation> getAllReservations() {
-            log.info("Obteniendo todas las reservas");
-            List<Reservation> reservations = reservationRepository.findAll();
-
-            log.info("Total de Reservas encontradas: {}", reservations.size());
-
-            for (Reservation r : reservations) {
-                try{
-                    log.info("Reserva ID: {}", r.getId());
-                    log.info("Usuario: {}", r.getUser().getFirstName() + " " + r.getUser().getLastName());
-                    log.info("Vehículo: {}", r.getVehicle().getName());
-                    log.info("Tipo de vehículo: {}", r.getVehicle().getVehicleType() != null ? r.getVehicle().getVehicleType().getType() : "N/A");
-                    log.info("DUI del usuario: {}", r.getUser().getDui());
-                    log.info("Correo del usuario: {}", r.getUser().getEmail());
-                    log.info("Fecha de inicio: {}", r.getStartDate());
-                    log.info("Fecha de fin: {}", r.getEndDate());
-                } catch (Exception innerEx) {
-                    log.error("❌ Error procesando reserva con ID: {}", r.getId(), innerEx);
-                }
+    private void extractTransactionIdIfPresent(Reservation reservation, String body) {
+        if (body == null) return;
+        try {
+            JsonNode root = objectMapper.readTree(body);
+            JsonNode data = root.get("data");
+            if (data != null && data.get("id") != null) {
+                reservation.setWompiTransactionId(data.get("id").asText());
+                reservationRepository.save(reservation);
             }
-            return reservations;
+        } catch (Exception e) {
+            log.debug("No se pudo extraer id de transacción: {}", e.getMessage());
+        }
     }
 
-    public Reservation getReservationById(UUID id) {
-        return reservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Reserva con id " + id + " no encontrada"));
-    }
-    // Metodos que faltan
-    // GetByDateRange, GetByUser, GetByTypeOfVehicle, GetByVehicle
+    public Reservation markConfirmed(String paymentReference, String wompiTransactionId, String methodType) {
+        Reservation reservation = reservationRepository.findByPaymentReference(paymentReference)
+                .orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada para referencia"));
 
-    public List<Reservation> getReservationByRange(Date startDate, Date endDate) {
-        return reservationRepository.findByStartDateBetween(startDate, endDate);
-    }
-    public List<Reservation> getReservationByUser(UUID user) {
-            return reservationRepository.findAll().stream()
-                    .filter(reservation -> reservation.getUser().getId().equals(user))
-                    .toList();
-    }
+        if (reservation.getStatus() == ReservationStatus.CONFIRMED) return reservation;
 
-    public List<Reservation> getReservationByVehicle(UUID vehicle) {
-            return reservationRepository.findAll().stream()
-                    .filter(reservation -> reservation.getVehicle().getId().equals(vehicle))
-                    .toList();
+        if (reservation.isExpiredPending()) {
+            reservation.setStatus(ReservationStatus.EXPIRED);
+            reservationRepository.save(reservation);
+            throw new IllegalStateException("Reserva expirada");
+        }
+
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setWompiTransactionId(wompiTransactionId);
+        reservation.setPaymentMethodType(methodType);
+        reservationRepository.save(reservation);
+        return reservation;
     }
 
-    public List<Reservation> getReservationByVehicleType(String vehicleType) {
-            VehicleType type = vehicleTypeRepository.findByType(vehicleType)
-                    .orElseThrow(() -> new EntityNotFoundException("Tipo de vehículo no encontrado"));
-            return reservationRepository.findByVehicle_VehicleType(type);
+    public Reservation markFailed(String paymentReference, String reason) {
+        Reservation reservation = reservationRepository.findByPaymentReference(paymentReference)
+                .orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada"));
+        if (reservation.getStatus() == ReservationStatus.CONFIRMED ||
+                reservation.getStatus() == ReservationStatus.EXPIRED) return reservation;
+        reservation.setStatus(ReservationStatus.FAILED);
+        reservation.setFailureReason(reason);
+        reservationRepository.save(reservation);
+        return reservation;
+    }
+
+    public void expirePendings() {
+        reservationRepository.findExpiredPendings().forEach(r -> {
+            if (r.getStatus() == ReservationStatus.PENDING_PAYMENT) {
+                r.setStatus(ReservationStatus.EXPIRED);
+                reservationRepository.save(r);
+                log.info("Reserva expirada (reference={} id={})", r.getPaymentReference(), r.getId());
+            }
+        });
     }
 }

@@ -31,3 +31,10 @@ logging:
 jwt:
   secret: "2dc4d72e-b851-4844-aa5d-f944e452f0d4"
   exptime: 1296000000
+
+wompi:
+    public-key: pk_test_xxxxxxxxx
+    private-key: sk_test_xxxxxxxxx
+    webhook-secret: whsec_xxxxxxxxx
+    api-base: https://sandbox.wompi.co/v1
+    reservation-expiration-minutes: 15
