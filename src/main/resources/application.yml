@@ -33,8 +33,8 @@ jwt:
   exptime: 1296000000
 
 wompi:
-    public-key: pk_test_xxxxxxxxx
-    private-key: sk_test_xxxxxxxxx
-    webhook-secret: whsec_xxxxxxxxx
-    api-base: https://sandbox.wompi.co/v1
-    reservation-expiration-minutes: 15
+  public-key: ${WOMPI_PUBLIC_KEY}
+  private-key: ${WOMPI_PRIVATE_KEY}
+  webhook-secret: ${WOMPI_WEBHOOK_SECRET}
+  client-id: ${WOMPI_CLIENT_ID}
+  client-secret: ${WOMPI_CLIENT_SECRET}

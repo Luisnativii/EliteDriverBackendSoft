@@ -1,5 +1,5 @@
 // ReservationExpirationScheduler.java
-package com.example.elitedriverbackend.config;
+package com.example.elitedriverbackend.util;
 
 import com.example.elitedriverbackend.services.PaymentReservationService;
 import lombok.RequiredArgsConstructor;
