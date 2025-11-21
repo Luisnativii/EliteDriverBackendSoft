@@ -143,7 +143,7 @@ jwt.expiration=86400000
 
 ## Diagrama de la Bace de datos
 
-![WhatsApp Image 2025-06-29 at 22 42 21_522a0a7e](https://github.com/user-attachments/assets/f016631c-9c9b-4900-8f55-af3ca904c4c9)
+![[WhatsApp Image 2025-06-29 at 22 42 21_522a0a7e](https://github.com/user-attachments/assets/f016631c-9c9b-4900-8f55-af3ca904c4c9)](https://drive.google.com/file/d/1EFxChaawAwPk4M4GTM3N16v_HietglSF/view)
 
 
 ---
@@ -156,4 +156,4 @@ Este proyecto fue desarrollado como entrega final del curso **Programación N Ca
 
 ## 🔗 Repositorios relacionados
 
-- [Frontend - EliteDrive](https://github.com/PNC-012025/pnc-proyecto-final-frontend-grupo-04-s01)
+- [Frontend - EliteDrive]([[https://github.com/PNC-012025/pnc-proyecto-final-frontend-grupo-04-s01](https://github.com/Luisnativii/EliteDriverFrontEndSoft/blob/hotfix/.env)](https://github.com/Luisnativii/EliteDriverFrontEndSoft))
