@@ -5,6 +5,8 @@ spring:
     username: elitedriver_user
     password: z95xgpelpuAWxpZnEgVjQF4imkR2WlwM
     driver-class-name: org.postgresql.Driver
+    #url: jdbc:postgresql://localhost:5432/elitedriver
+    #password: elitedriver_pass
   jpa:
     hibernate:
       ddl-auto: update

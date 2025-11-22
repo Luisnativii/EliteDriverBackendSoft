@@ -25,11 +25,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
-    // Añadido /api/auth/validate
+
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
             "/api/auth/login",
             "/api/auth/register",
-            "/api/auth/validate"
+            "/api/auth/validate",
+            "/api/reservations",
+            "/api/reservations/date"
     );
 
     @Override
@@ -45,15 +47,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String username;
+
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
+        final String jwt = authHeader.substring(7);
+        final String username;
         try {
             username = jwtService.extractUsername(jwt);
         } catch (ExpiredJwtException e) {
@@ -78,6 +80,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private boolean isExcludedPath(String requestPath) {
-        return EXCLUDED_PATHS.stream().anyMatch(requestPath::startsWith);
+        return EXCLUDED_PATHS.contains(requestPath);
     }
 }
