@@ -19,7 +19,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
     List<Vehicle> findByCapacity(int capacity);
 
     @Query("""
-        SELECT v
+        SELECT v.id, v.brand, v.capacity, v.features, v.kilometers, v.kmForMaintenance, v.model, v.name, v.pricePerDay, v.status
         FROM Vehicle v
         WHERE v.status = :status
           AND v.id NOT IN (
