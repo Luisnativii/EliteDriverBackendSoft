@@ -17,6 +17,9 @@ import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
 
+/*
+    Servicio para la generación y validación de tokens JWT.
+ */
 @Service
 @Slf4j
 public class JwtService {
@@ -27,6 +30,9 @@ public class JwtService {
     @Value("${jwt.exptime:86400000}") // por defecto 24h en ms
     private long expirationMs;
 
+    /*
+        Genera un token JWT para el email proporcionado.
+     */
     public String generateToken(String email) {
         return Jwts.builder()
                 .setSubject(email)
@@ -36,14 +42,23 @@ public class JwtService {
                 .compact();
     }
 
+    /*
+        Extrae el nombre de usuario (email) del token JWT.
+     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /*
+        Extrae la fecha de expiración del token JWT.
+     */
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    /*
+        Extrae cualquier reclamo del token JWT usando la función proporcionada.
+     */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
@@ -53,10 +68,16 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    /*
+        Verifica si el token JWT ha expirado.
+     */
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
+    /*
+        Valida el token JWT verificando su firma y expiración.
+     */
     public boolean isTokenValid(String token) {
         try {
             Jwts.parserBuilder()
@@ -85,11 +106,17 @@ public class JwtService {
         }
     }
 
+    /*
+        Valida el token JWT comparando el nombre de usuario y verificando su expiración.
+     */
     public boolean isTokenValid(String token, String username) {
         final String tokenUsername = extractUsername(token);
         return (tokenUsername.equals(username)) && !isTokenExpired(token);
     }
 
+    /*
+        Obtiene la clave de firma a partir del secreto configurado.
+     */
     private Key getSignInKey() {
         // Usa el secreto de 'application.yml' tal cual (no Base64), para evitar errores de decodificación.
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

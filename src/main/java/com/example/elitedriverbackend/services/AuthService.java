@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
+/*
+    Servicio para manejar la autenticación y registro de usuarios.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -29,6 +32,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authManager;
 
+    /*
+        Registra un nuevo usuario en el sistema.
+     */
     public String register(RegisterRequest request) {
         // Verificar si el usuario ya existe
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -51,6 +57,10 @@ public class AuthService {
         return "Usuario registrado exitosamente";
     }
 
+    /*
+        Autentica a un usuario y genera un token JWT.
+        Si las credenciales son inválidas, lanza una excepción.
+     */
     public AuthResponse login(AuthRequest request) {
         log.info("Buscando usuario con email: {}", request.getEmail());
 
@@ -97,6 +107,9 @@ public class AuthService {
                 .build();
     }
 
+    /*
+        Valida un token JWT.
+     */
     public boolean validateToken(String token) {
         try {
             return jwtService.isTokenValid(token);

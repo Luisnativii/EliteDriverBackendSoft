@@ -20,12 +20,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/*
+    Configuración de seguridad para la aplicación Elite Driver Backend.
+    Define las reglas de autorización y autenticación, incluyendo el manejo de CORS y la integración del filtro JWT.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
 
+    /*
+        Configura la cadena de filtros de seguridad HTTP.
+        Define las políticas de CORS, CSRF, gestión de sesiones y reglas de autorización para diferentes endpoints.
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -52,6 +60,9 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /*
+        Configura la fuente de configuración CORS para permitir solicitudes desde el frontend.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -65,13 +76,17 @@ public class SecurityConfig {
         return source;
     }
 
-
-
+    /*
+        Define el codificador de contraseñas utilizando BCrypt.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /*
+        Proporciona el gestor de autenticación basado en la configuración de autenticación existente.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
         return cfg.getAuthenticationManager();

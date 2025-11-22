@@ -18,6 +18,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+/*
+    This filter intercepts incoming HTTP requests to validate JWT tokens.
+    It excludes specific paths from authentication checks, extracts the JWT
+    from the Authorization header, validates it, and sets the authentication
+    in the security context if valid.
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -34,6 +40,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/reservations/date"
     );
 
+    /*
+        Filters incoming requests to validate JWT tokens.
+        Excludes specific paths from authentication checks.
+        If a valid JWT is found, sets the authentication in the security context.
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

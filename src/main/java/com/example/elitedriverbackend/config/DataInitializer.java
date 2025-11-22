@@ -12,6 +12,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
+/*
+    Clase de configuración para inicializar datos en la base de datos al iniciar la aplicación.
+    - Crea un usuario ADMIN si no existe.
+    - Si no existen, crea tipos de vehículo: PickUp, Sedan, SUV.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class DataInitializer {

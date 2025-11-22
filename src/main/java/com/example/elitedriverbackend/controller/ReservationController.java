@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/*
+    Controlador para gestionar las reservas de vehículos.
+    Proporciona endpoints para crear, obtener, listar y eliminar reservas.
+ */
 @RestController
 @RequestMapping("/api/reservations")
 @RequiredArgsConstructor
@@ -28,6 +32,10 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
+    /*
+        Endpoint para crear una nueva reserva.
+        Recibe un DTO con los datos de la reserva y devuelve un DTO con los detalles de la reserva creada.
+     */
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> addReservation(@Valid @RequestBody CreateReservationDTO dto) {
         Reservation reservation = reservationService.addReservation(dto);
@@ -36,6 +44,11 @@ public class ReservationController {
     }
 
 
+    /*
+        Endpoint para obtener una reserva por su ID.
+        Devuelve la reserva correspondiente si existe.
+        Si no existe, lanza una excepción.
+     */
     @GetMapping("{id}")
     public ResponseEntity<Reservation> getReservation(@PathVariable String id) {
         UUID uuid = parseUUID(id);
@@ -44,6 +57,9 @@ public class ReservationController {
 
     }
 
+    /*
+        Método auxiliar para convertir un String en UUID.
+     */
     private UUID parseUUID(String id) {
         return UUID.fromString(id);
     }
@@ -51,6 +67,10 @@ public class ReservationController {
 
 
 
+    /*
+        Endpoint para obtener todas las reservas.
+        Devuelve una lista de DTOs con los detalles de todas las reservas.
+     */
     @GetMapping
     public ResponseEntity<List<ReservationResponseDTO>> getAllReservations() {
             List<Reservation> reservations = reservationService.getAllReservations();
@@ -61,6 +81,9 @@ public class ReservationController {
             return ResponseEntity.ok(reservationDTOs);
     }
 
+    /*
+        Método auxiliar para convertir una entidad Reservation en un DTO ReservationResponseDTO.
+     */
     private ReservationResponseDTO convertToDTO(Reservation reservation) {
         if (reservation.getVehicle() == null) {
             throw new EntityNotFoundException("Reservation con id " + reservation.getId() + " no tiene vehículo asociado");
@@ -99,6 +122,10 @@ public class ReservationController {
     }
 
 
+    /*
+        Endpoint para obtener reservas dentro de un rango de fechas.
+        Recibe las fechas de inicio y fin como parámetros y devuelve una lista de DTOs con los detalles de las reservas en ese rango.
+     */
     @GetMapping("/date")
     public ResponseEntity<List<ReservationResponseDTO>> getReservationByRange(@RequestParam("startDate") String startDateStr,
                                                                     @RequestParam("endDate") String endDateStr) throws ParseException {
@@ -119,6 +146,10 @@ public class ReservationController {
 
     }
 
+    /*
+        Endpoint para obtener reservas por ID de usuario.
+        Recibe el ID del usuario como parámetro y devuelve una lista de DTOs con los detalles de las reservas de ese usuario.
+     */
     @GetMapping("/user")
     public ResponseEntity<List<ReservationResponseDTO>> getReservationByUser(@RequestParam("userId") String userId) {
             UUID uuid = parseUUID(userId);

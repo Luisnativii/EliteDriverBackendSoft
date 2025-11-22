@@ -20,6 +20,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+/*
+    Servicio para manejar la lógica de negocio relacionada con las reservas de vehículos.
+    Proporciona métodos para crear, eliminar y consultar reservas.
+ */
 @Slf4j
 @Service
 public class ReservationService {
@@ -36,6 +40,12 @@ public class ReservationService {
     @Autowired
     private VehicleTypeRepository vehicleTypeRepository;
 
+    /*
+        Crea una nueva reserva si el vehículo no está ya reservado en el rango de fechas especificado.
+        Recibe un DTO con los datos necesarios para crear la reserva.
+        Retorna la reserva creada.
+        Si el vehículo ya está reservado en ese rango, lanza una excepción.
+     */
     public Reservation addReservation(CreateReservationDTO createReservationDTO) {
 
         User user = userRepository.findById(UUID.fromString(createReservationDTO.getUserId()))
@@ -72,6 +82,10 @@ public class ReservationService {
         return reservationRepository.save(newReservation);
     }
 
+    /*
+        Elimina una reserva por su ID.
+        Si la reserva no existe, lanza una excepción.
+     */
     public void deleteReservation(UUID id) {
         if (!reservationRepository.existsById(id)) {
             throw new RuntimeException("Reserva con id " + id + " no encontrada");
@@ -79,6 +93,10 @@ public class ReservationService {
         reservationRepository.deleteById(id);
     }
 
+    /*
+        Obtiene todas las reservas y las registra en el log.
+        Retorna la lista de reservas.
+     */
     public List<Reservation> getAllReservations() {
         try{
             log.info("Obteniendo todas las reservas");
@@ -108,13 +126,20 @@ public class ReservationService {
         }
     }
 
+    /*
+        Obtiene una reserva por su ID.
+        Si la reserva no existe, lanza una excepción.
+     */
     public Reservation getReservationById(UUID id) {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reserva con id " + id + " no encontrada"));
     }
-    // Metodos que faltan
-    // GetByDateRange, GetByUser, GetByTypeOfVehicle, GetByVehicle
 
+
+    /*
+        Obtiene las reservas que caen dentro de un rango de fechas especificado.
+        Retorna la lista de reservas en ese rango.
+     */
     public List<Reservation> getReservationByRange(Date startDate, Date endDate) {
         try {
             return reservationRepository.findByStartDateBetween(startDate, endDate);
@@ -122,6 +147,11 @@ public class ReservationService {
             throw new RuntimeException("Error obteniendo reservas: " + e.getMessage(), e);
         }
     }
+
+    /*
+        Obtiene las reservas asociadas a un usuario específico por su ID.
+        Retorna la lista de reservas del usuario.
+     */
     public List<Reservation> getReservationByUser(UUID user) {
         try {
             return reservationRepository.findAll().stream()
@@ -132,6 +162,10 @@ public class ReservationService {
         }
     }
 
+    /*
+        Obtiene las reservas asociadas a un vehículo específico por su ID.
+        Retorna la lista de reservas del vehículo.
+     */
     public List<Reservation> getReservationByVehicle(UUID vehicle) {
         try {
             return reservationRepository.findAll().stream()
@@ -142,6 +176,10 @@ public class ReservationService {
         }
     }
 
+    /*
+        Obtiene las reservas asociadas a un tipo de vehículo específico.
+        Retorna la lista de reservas del tipo de vehículo.
+     */
     public List<Reservation> getReservationByVehicleType(String vehicleType) {
         try {
             VehicleType type = vehicleTypeRepository.findByType(vehicleType)

@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+    Manejo global de excepciones para la aplicación.
+    Captura excepciones comunes y personalizadas, devolviendo respuestas HTTP adecuadas.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
