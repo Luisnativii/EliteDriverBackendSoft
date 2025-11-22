@@ -36,6 +36,7 @@ public class SecurityConfig {
                         // Endpoints públicos
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/vehicles").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reservations").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reservations/date").permitAll()
                         // Validación de token
                         .requestMatchers("/api/auth/validate").authenticated()
