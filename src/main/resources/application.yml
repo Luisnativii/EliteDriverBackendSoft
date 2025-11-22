@@ -1,12 +1,12 @@
 # application.yml (ajustado)
 spring:
   datasource:
-    #url: jdbc:postgresql://dpg-d4ejocmuk2gs739jbjm0-a.oregon-postgres.render.com:5432/elitedriver_9bpe
+    url: jdbc:postgresql://dpg-d4ejocmuk2gs739jbjm0-a.oregon-postgres.render.com:5432/elitedriver_9bpe
     username: elitedriver_user
-    #password: z95xgpelpuAWxpZnEgVjQF4imkR2WlwM
+    password: z95xgpelpuAWxpZnEgVjQF4imkR2WlwM
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/elitedriver
-    password: elitedriver_pass
+    #url: jdbc:postgresql://localhost:5432/elitedriver
+    #password: elitedriver_pass
   jpa:
     hibernate:
       ddl-auto: update
