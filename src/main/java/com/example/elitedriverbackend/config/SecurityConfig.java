@@ -33,17 +33,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/vehicles").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reservations").permitAll() // <-- añadido
                         .requestMatchers(HttpMethod.GET, "/api/reservations/date").permitAll()
-                        // Validación de token
                         .requestMatchers("/api/auth/validate").authenticated()
-                        // Operaciones de administración sobre vehículos
                         .requestMatchers(HttpMethod.POST,   "/api/vehicles").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/vehicles/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasRole("ADMIN")
-                        // Cualquier otra petición requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -58,13 +55,10 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
