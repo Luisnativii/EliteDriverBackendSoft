@@ -84,19 +84,13 @@ Authorization: Bearer <tu-token-jwt>
 
 ---
 
-## 🚀 Despliegue
+## 🚀 Ejecucion
 
-### Render (recomendado)
-El backend puede desplegarse fácilmente en Render.com utilizando el archivo `Dockerfile` incluido.
-
-### Localmente con Docker
 
 ```bash
-# Construcción de imagen
-docker build -t elitedrive-backend .
+./mvnw clean install -DskipTests
 
-# Ejecución de contenedor
-docker run -p 8080:8080 elitedrive-backend
+java -jar ./target/jarName
 ```
 
 ---
