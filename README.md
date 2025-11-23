@@ -143,7 +143,8 @@ jwt.expiration=86400000
 
 ## Diagrama de la Base de datos
 
-(https://github.com/user-attachments/assets/f016631c-9c9b-4900-8f55-af3ca904c4c9)](https://drive.google.com/file/d/1EFxChaawAwPk4M4GTM3N16v_HietglSF/view)
+![WhatsApp Image 2025-11-23 at 03 39 59_17503854](https://github.com/user-attachments/assets/0b9fefa9-25ab-401a-b320-b0a094a8f539)
+
 
 
 ---
