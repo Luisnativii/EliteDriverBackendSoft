@@ -149,11 +149,6 @@ jwt.expiration=86400000
 
 ---
 
-## 📝 Licencia
-
-Este proyecto fue desarrollado como entrega final del curso **Programación N Capas - Ciclo 01-25**. Uso estrictamente académico.
-
----
 
 ## 🔗 Repositorios relacionados
 
