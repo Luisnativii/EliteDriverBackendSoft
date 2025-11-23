@@ -156,4 +156,4 @@ Este proyecto fue desarrollado como entrega final del curso **Programación N Ca
 
 ## 🔗 Repositorios relacionados
 
-- [Frontend - EliteDrive]([[https://github.com/PNC-012025/pnc-proyecto-final-frontend-grupo-04-s01](https://github.com/Luisnativii/EliteDriverFrontEndSoft/blob/hotfix/.env)](https://github.com/Luisnativii/EliteDriverFrontEndSoft))
+- [Frontend - EliteDrive](https://github.com/Luisnativii/EliteDriverFrontEndSoft)
